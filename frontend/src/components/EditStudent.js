@@ -84,8 +84,8 @@ const EditStudent = ({ onUpdate, loading }) => {
       case 'studentId':
         if (!value.trim()) {
           newErrors.studentId = 'Student ID is required';
-        } else if (!/^[A-Z]{3}\d{6}$/.test(value)) {
-          newErrors.studentId = 'Student ID must be in format: ABC123456';
+        } else if (!/^[0-9]{2}[B][0-9]{2}[A][I][0-9]{3}$/.test(value)) {
+          newErrors.studentId = 'Student ID must be in format: 25B21AI024 (Year-Batch-YearSemCode-Course-RollNo)';
         } else {
           delete newErrors.studentId;
         }
@@ -347,7 +347,7 @@ const EditStudent = ({ onUpdate, loading }) => {
                     value={formData.studentId}
                     onChange={handleChange}
                     onBlur={handleBlur}
-                    placeholder="e.g., STU123456"
+                    placeholder="e.g., 25B21AI024"
                   />
                 </div>
                 {getFieldState('studentId').showFeedback && getFieldState('studentId').hasError && (
@@ -636,7 +636,7 @@ const EditStudent = ({ onUpdate, loading }) => {
         <div className="row">
           <div className="col-md-6">
             <ul className="mb-0">
-              <li><strong>Student ID changes</strong> will affect unique identification</li>
+              <li><strong>Student ID changes</strong> will affect unique identification (Format: 25B21AI024 = Year-Batch-YearSemCode-Course-RollNo)</li>
               <li><strong>All fields marked with</strong> <span className="text-danger">*</span> <strong>are required</strong></li>
               <li><strong>Make sure all information is accurate</strong> before updating</li>
             </ul>

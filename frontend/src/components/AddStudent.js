@@ -19,7 +19,10 @@ const AddStudent = ({ onAdd, loading }) => {
   useEffect(() => {
     // Auto-generate student ID if empty
     if (!formData.studentId && !touched.studentId) {
-      const generatedId = `STU${Date.now().toString().slice(-6)}`;
+      const currentYear = new Date().getFullYear() % 100; // Get last 2 digits of current year
+      const yearSemCode = Math.floor(Math.random() * 99).toString().padStart(2, '0'); // Year-Sem code
+      const randomNum = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+      const generatedId = `${currentYear}B${yearSemCode}AI${randomNum}`;
       setFormData(prev => ({ ...prev, studentId: generatedId }));
     }
   }, [formData.studentId, touched.studentId]);
@@ -65,8 +68,8 @@ const AddStudent = ({ onAdd, loading }) => {
       case 'studentId':
         if (!value.trim()) {
           newErrors.studentId = 'Student ID is required';
-        } else if (!/^[A-Z]{3}\d{6}$/.test(value)) {
-          newErrors.studentId = 'Student ID must be in format: ABC123456';
+        } else if (!/^[0-9]{2}[B][0-9]{2}[A][I][0-9]{3}$/.test(value)) {
+          newErrors.studentId = 'Student ID must be in format: 25B21AI024 (Year-Batch-YearSemCode-Course-RollNo)';
         } else {
           delete newErrors.studentId;
         }
@@ -289,7 +292,7 @@ const AddStudent = ({ onAdd, loading }) => {
                     value={formData.studentId}
                     onChange={handleChange}
                     onBlur={handleBlur}
-                    placeholder="e.g., STU123456"
+                    placeholder="e.g., 25B21AI024"
                   />
                 </div>
                 {getFieldState('studentId').showFeedback && getFieldState('studentId').hasError && (
@@ -572,7 +575,7 @@ const AddStudent = ({ onAdd, loading }) => {
         <div className="row">
           <div className="col-md-6">
             <ul className="mb-0">
-              <li><strong>Student ID:</strong> Format: ABC123456 (3 letters + 6 digits)</li>
+              <li><strong>Student ID:</strong> Format: 25B21AI024 (Year-Batch-YearSemCode-Course-RollNo)</li>
               <li><strong>Name:</strong> Only letters and spaces allowed</li>
               <li><strong>Email:</strong> Must be a valid email address</li>
               <li><strong>Phone:</strong> Exactly 10 digits, no spaces</li>

@@ -38,7 +38,7 @@ The Student Management System is a cutting-edge web application that revolutioni
 ## 📋 Student Information Fields
 
 Each student record contains comprehensive information:
-- **Student ID** - Auto-generated unique identifier (ABC123456 format)
+- **Student ID** - Auto-generated unique identifier (25B21AI024 = Year-Batch-YearSemCode-Course-RollNo)
 - **Name** - Full name with validation
 - **Email** - Validated email address
 - **Phone** - 10-digit phone number with formatting
@@ -108,7 +108,7 @@ student-management-system/
 ### Enhanced Student Model
 ```javascript
 {
-  studentId: String (Required, Unique, Pattern: ABC123456),
+  studentId: String (Required, Unique, Pattern: 25B21AI024 = Year-Batch-YearSemCode-Course-RollNo),
   name: String (Required, Min: 2 chars, Letters only),
   email: String (Required, Email format validation),
   phone: String (Required, Exactly 10 digits),
