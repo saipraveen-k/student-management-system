@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
@@ -6,16 +6,17 @@ const StudentList = ({ students, loading, onDelete, onSearch }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [studentToDelete, setStudentToDelete] = useState(null);
-  const [animatedStudents, setAnimatedStudents] = useState([]);
+  const prevStudentsRef = useRef();
+
+  // Memoize students to prevent unnecessary re-renders
+  const memoizedStudents = useMemo(() => students, [students]);
 
   useEffect(() => {
-    // Trigger animation when students change
-    setAnimatedStudents([]);
-    const timer = setTimeout(() => {
-      setAnimatedStudents(students);
-    }, 100);
-    return () => clearTimeout(timer);
-  }, [students]);
+    // Only trigger animation when students actually change
+    if (prevStudentsRef.current !== memoizedStudents) {
+      prevStudentsRef.current = memoizedStudents;
+    }
+  }, [memoizedStudents]);
 
   // Handle search with debounce
   useEffect(() => {
@@ -100,7 +101,7 @@ const StudentList = ({ students, loading, onDelete, onSearch }) => {
             <div className="stat-card">
               <div className="stat-icon">📊</div>
               <div className="stat-content">
-                <div className="stat-number">{students.length}</div>
+                <div className="stat-number">{memoizedStudents.length}</div>
                 <div className="stat-label">Total Students</div>
               </div>
             </div>
@@ -143,7 +144,7 @@ const StudentList = ({ students, loading, onDelete, onSearch }) => {
             {searchQuery && (
               <div className="search-info mt-2">
                 <small className="text-muted">
-                  Searching for: <strong>"{searchQuery}"</strong> • {students.length} results found
+                  Searching for: <strong>"{searchQuery}"</strong> • {memoizedStudents.length} results found
                 </small>
               </div>
             )}
@@ -179,7 +180,7 @@ const StudentList = ({ students, loading, onDelete, onSearch }) => {
       {/* Students Table */}
       {!loading && (
         <div className="table-container">
-          {students.length === 0 ? (
+          {memoizedStudents.length === 0 ? (
             <div className="empty-state">
               <div className="empty-icon">📚</div>
               <h5 className="empty-title">No Students Found</h5>
@@ -248,10 +249,10 @@ const StudentList = ({ students, loading, onDelete, onSearch }) => {
                       </tr>
                     </thead>
                     <tbody>
-                      {animatedStudents.map((student, index) => (
+                      {memoizedStudents.map((student, index) => (
                         <tr 
                           key={student._id} 
-                          className={`student-row ${animatedStudents.includes(student) ? 'fade-in-up' : ''}`}
+                          className={`student-row fade-in-up`}
                           style={{ animationDelay: `${index * 0.1}s` }}
                         >
                           <td>
@@ -511,9 +512,15 @@ const StudentList = ({ students, loading, onDelete, onSearch }) => {
           margin-bottom: 2rem;
         }
 
+        .table-container {
+          width: 100%;
+          overflow-x: auto;
+        }
+
         .table-card {
           border-radius: 12px;
           overflow: hidden;
+          margin: 0;
         }
 
         .student-row {
@@ -528,20 +535,30 @@ const StudentList = ({ students, loading, onDelete, onSearch }) => {
         .student-id {
           font-weight: 600;
           color: #667eea;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
 
         .student-info {
           display: flex;
           flex-direction: column;
+          min-width: 0;
         }
 
         .student-name {
           font-weight: 600;
           color: #2d3748;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
 
         .student-email-small {
           font-size: 0.875rem;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
 
         .department-badge, .year-badge {
@@ -551,12 +568,14 @@ const StudentList = ({ students, loading, onDelete, onSearch }) => {
           font-size: 0.75rem;
           text-transform: uppercase;
           letter-spacing: 0.5px;
+          white-space: nowrap;
         }
 
         .action-buttons {
           display: flex;
           gap: 0.5rem;
           justify-content: center;
+          min-width: 120px;
         }
 
         .action-btn {

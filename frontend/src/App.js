@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import StudentList from './components/StudentList';
@@ -14,7 +14,7 @@ function App() {
   const [success, setSuccess] = useState('');
 
   // Fetch all students
-  const fetchStudents = async () => {
+  const fetchStudents = useCallback(async () => {
     setLoading(true);
     try {
       const response = await studentAPI.getAllStudents();
@@ -26,10 +26,10 @@ function App() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Add new student
-  const addStudent = async (studentData) => {
+  const addStudent = useCallback(async (studentData) => {
     setLoading(true);
     try {
       await studentAPI.createStudent(studentData);
@@ -44,10 +44,10 @@ function App() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetchStudents]);
 
   // Update student
-  const updateStudent = async (id, studentData) => {
+  const updateStudent = useCallback(async (id, studentData) => {
     setLoading(true);
     try {
       await studentAPI.updateStudent(id, studentData);
@@ -62,10 +62,10 @@ function App() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetchStudents]);
 
   // Delete student
-  const deleteStudent = async (id) => {
+  const deleteStudent = useCallback(async (id) => {
     setLoading(true);
     try {
       await studentAPI.deleteStudent(id);
@@ -80,10 +80,10 @@ function App() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetchStudents]);
 
   // Search students
-  const searchStudents = async (query) => {
+  const searchStudents = useCallback(async (query) => {
     if (!query.trim()) {
       fetchStudents();
       return;
@@ -100,13 +100,13 @@ function App() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetchStudents]);
 
   // Clear messages
-  const clearMessages = () => {
+  const clearMessages = useCallback(() => {
     setError('');
     setSuccess('');
-  };
+  }, []);
 
   useEffect(() => {
     fetchStudents();

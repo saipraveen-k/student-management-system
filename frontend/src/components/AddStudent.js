@@ -278,7 +278,7 @@ const AddStudent = ({ onAdd, loading }) => {
               <div className="col-md-6 mb-4">
                 <label htmlFor="studentId" className="form-label d-flex align-items-center">
                   <span className="field-icon">🆔</span>
-                  Student ID <span className="text-danger ms-1">*</span>
+                  Student ID <span className="required-asterisk ms-1">*</span>
                 </label>
                 <div className="input-group">
                   <span className="input-group-text">
@@ -313,7 +313,7 @@ const AddStudent = ({ onAdd, loading }) => {
               <div className="col-md-6 mb-4">
                 <label htmlFor="name" className="form-label d-flex align-items-center">
                   <span className="field-icon">👤</span>
-                  Full Name <span className="text-danger ms-1">*</span>
+                  Full Name <span className="required-asterisk ms-1">*</span>
                 </label>
                 <div className="input-group">
                   <span className="input-group-text">
@@ -348,7 +348,7 @@ const AddStudent = ({ onAdd, loading }) => {
               <div className="col-md-6 mb-4">
                 <label htmlFor="email" className="form-label d-flex align-items-center">
                   <span className="field-icon">📧</span>
-                  Email Address <span className="text-danger ms-1">*</span>
+                  Email Address <span className="required-asterisk ms-1">*</span>
                 </label>
                 <div className="input-group">
                   <span className="input-group-text">
@@ -383,7 +383,7 @@ const AddStudent = ({ onAdd, loading }) => {
               <div className="col-md-6 mb-4">
                 <label htmlFor="phone" className="form-label d-flex align-items-center">
                   <span className="field-icon">📱</span>
-                  Phone Number <span className="text-danger ms-1">*</span>
+                  Phone Number <span className="required-asterisk ms-1">*</span>
                 </label>
                 <div className="input-group">
                   <span className="input-group-text">
@@ -419,7 +419,7 @@ const AddStudent = ({ onAdd, loading }) => {
               <div className="col-md-6 mb-4">
                 <label htmlFor="department" className="form-label d-flex align-items-center">
                   <span className="field-icon">🏢</span>
-                  Department <span className="text-danger ms-1">*</span>
+                  Department <span className="required-asterisk ms-1">*</span>
                 </label>
                 <div className="input-group">
                   <span className="input-group-text">
@@ -462,7 +462,7 @@ const AddStudent = ({ onAdd, loading }) => {
               <div className="col-md-6 mb-4">
                 <label htmlFor="year" className="form-label d-flex align-items-center">
                   <span className="field-icon">📅</span>
-                  Year <span className="text-danger ms-1">*</span>
+                  Year <span className="required-asterisk ms-1">*</span>
                 </label>
                 <div className="input-group">
                   <span className="input-group-text">
@@ -501,7 +501,7 @@ const AddStudent = ({ onAdd, loading }) => {
               <div className="col-12 mb-4">
                 <label htmlFor="address" className="form-label d-flex align-items-center">
                   <span className="field-icon">📍</span>
-                  Address <span className="text-danger ms-1">*</span>
+                  Address <span className="required-asterisk ms-1">*</span>
                 </label>
                 <div className="input-group">
                   <span className="input-group-text">
@@ -586,7 +586,7 @@ const AddStudent = ({ onAdd, loading }) => {
               <li><strong>Department:</strong> Select from available options</li>
               <li><strong>Year:</strong> Current academic year</li>
               <li><strong>Address:</strong> Minimum 10 characters</li>
-              <li><strong>All fields marked with</strong> <span className="text-danger">*</span> <strong>are required</strong></li>
+              <li><strong>All fields marked with</strong> <span className="required-asterisk">*</span> <strong>are required</strong></li>
             </ul>
           </div>
         </div>
@@ -628,6 +628,35 @@ const AddStudent = ({ onAdd, loading }) => {
         .form-card {
           border-radius: 12px;
           overflow: hidden;
+        }
+
+        /* Fix for glassmorphism form text visibility */
+        .form-control, .form-select {
+          color: #131515 !important;
+          background: rgba(255, 255, 255, 0.9) !important;
+        }
+
+        .form-control::placeholder {
+          color: #6b7280 !important;
+        }
+
+        .form-label {
+          color: #ffffff !important;
+          font-weight: 700;
+          font-size: 1.05em;
+          text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+        }
+
+        .input-group-text {
+          color: #131515 !important;
+          background: rgba(255, 255, 255, 0.15) !important;
+        }
+
+        .required-asterisk {
+          color: #f56565 !important;
+          font-weight: 700;
+          font-size: 1.1em;
+          margin-left: 0.25rem;
         }
 
         .input-group {
