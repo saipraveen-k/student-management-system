@@ -204,43 +204,43 @@ const StudentList = ({ students, loading, onDelete, onSearch }) => {
                   <table className="table table-hover mb-0">
                     <thead>
                       <tr>
-                        <th scope="col">
+                        <th scope="col" style={{width: '120px'}}>
                           <div className="d-flex align-items-center">
                             <span>🆔</span>
                             <span className="ms-2">Student ID</span>
                           </div>
                         </th>
-                        <th scope="col">
+                        <th scope="col" style={{width: '200px'}}>
                           <div className="d-flex align-items-center">
                             <span>👤</span>
                             <span className="ms-2">Name</span>
                           </div>
                         </th>
-                        <th scope="col">
+                        <th scope="col" style={{width: '250px'}}>
                           <div className="d-flex align-items-center">
                             <span>📧</span>
                             <span className="ms-2">Email</span>
                           </div>
                         </th>
-                        <th scope="col">
+                        <th scope="col" style={{width: '140px'}}>
                           <div className="d-flex align-items-center">
                             <span>📱</span>
                             <span className="ms-2">Phone</span>
                           </div>
                         </th>
-                        <th scope="col">
+                        <th scope="col" style={{width: '150px'}}>
                           <div className="d-flex align-items-center">
                             <span>🏢</span>
                             <span className="ms-2">Department</span>
                           </div>
                         </th>
-                        <th scope="col">
+                        <th scope="col" style={{width: '100px'}}>
                           <div className="d-flex align-items-center">
                             <span>📅</span>
                             <span className="ms-2">Year</span>
                           </div>
                         </th>
-                        <th scope="col" className="text-center">
+                        <th scope="col" style={{width: '120px'}} className="text-center">
                           <div className="d-flex align-items-center justify-content-center">
                             <span>⚙️</span>
                             <span className="ms-2">Actions</span>
@@ -248,47 +248,44 @@ const StudentList = ({ students, loading, onDelete, onSearch }) => {
                         </th>
                       </tr>
                     </thead>
-                    <tbody>
+                        <tbody>
                       {memoizedStudents.map((student, index) => (
                         <tr 
                           key={student._id} 
                           className={`student-row fade-in-up`}
                           style={{ animationDelay: `${index * 0.1}s` }}
                         >
-                          <td>
+                          <td style={{width: '120px', padding: '1rem'}}>
                             <div className="student-id">
                               <strong>{student.studentId}</strong>
                             </div>
                           </td>
-                          <td>
+                          <td style={{width: '200px', padding: '1rem'}}>
                             <div className="student-info">
                               <div className="student-name">{student.name}</div>
-                              <div className="student-email-small text-muted small">
-                                {student.email}
-                              </div>
                             </div>
                           </td>
-                          <td>
+                          <td style={{width: '250px', padding: '1rem'}}>
                             <div className="contact-info">
                               <span className="email-text">{student.email}</span>
                             </div>
                           </td>
-                          <td>
+                          <td style={{width: '140px', padding: '1rem'}}>
                             <div className="phone-info">
                               <span className="phone-text">📞 {student.phone}</span>
                             </div>
                           </td>
-                          <td>
+                          <td style={{width: '150px', padding: '1rem'}}>
                             <span className={`badge bg-${getDepartmentColor(student.department)} department-badge`}>
                               {student.department}
                             </span>
                           </td>
-                          <td>
+                          <td style={{width: '100px', padding: '1rem'}}>
                             <span className={`badge bg-${getYearVariant(student.year)} year-badge`}>
                               {student.year}
                             </span>
                           </td>
-                          <td>
+                          <td style={{width: '120px', padding: '1rem'}} className="text-center">
                             <div className="action-buttons">
                               <Link 
                                 to={`/edit/${student._id}`} 
@@ -525,19 +522,23 @@ const StudentList = ({ students, loading, onDelete, onSearch }) => {
 
         .student-row {
           transition: all 0.3s ease;
+          border-bottom: 1px solid #e9ecef;
         }
 
         .student-row:hover {
           background: rgba(102, 126, 234, 0.05);
-          transform: scale(1.01);
+        }
+
+        .student-row:last-child {
+          border-bottom: none;
         }
 
         .student-id {
-          font-weight: 600;
+          font-weight: 700;
           color: #667eea;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
+          letter-spacing: 0.5px;
+          text-transform: uppercase;
+          font-size: 0.875rem;
         }
 
         .student-info {
@@ -547,15 +548,36 @@ const StudentList = ({ students, loading, onDelete, onSearch }) => {
         }
 
         .student-name {
-          font-weight: 600;
+          font-weight: 700;
           color: #2d3748;
+          font-size: 1rem;
+          line-height: 1.4;
+        }
+
+        .contact-info {
+          display: flex;
+          align-items: center;
+          min-width: 0;
+        }
+
+        .email-text {
+          font-size: 0.9rem;
+          color: #495057;
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
-        .student-email-small {
-          font-size: 0.875rem;
+        .phone-info {
+          display: flex;
+          align-items: center;
+          min-width: 0;
+        }
+
+        .phone-text {
+          font-size: 0.9rem;
+          color: #495057;
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
@@ -563,30 +585,36 @@ const StudentList = ({ students, loading, onDelete, onSearch }) => {
 
         .department-badge, .year-badge {
           padding: 0.5rem 0.75rem;
-          font-weight: 500;
-          border-radius: 6px;
+          font-weight: 600;
+          border-radius: 8px;
           font-size: 0.75rem;
           text-transform: uppercase;
           letter-spacing: 0.5px;
           white-space: nowrap;
+          border: none;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         .action-buttons {
           display: flex;
-          gap: 0.5rem;
+          gap: 0.75rem;
           justify-content: center;
-          min-width: 120px;
+          align-items: center;
+          min-width: 140px;
         }
 
         .action-btn {
-          padding: 0.375rem 0.75rem;
-          border-radius: 6px;
+          padding: 0.5rem 0.75rem;
+          border-radius: 8px;
           transition: all 0.3s ease;
           border: 2px solid;
+          font-weight: 600;
+          font-size: 0.875rem;
         }
 
         .action-btn:hover {
-          transform: translateY(-2px) scale(1.05);
+          transform: translateY(-1px);
+          box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
 
         .edit-btn {
