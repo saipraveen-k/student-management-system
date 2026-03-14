@@ -1,0 +1,190 @@
+.header-icon {
+  font-size: 2rem;
+  margin-right: 0.75rem;
+}
+
+.btn-icon {
+  margin-right: 0.5rem;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.stat-icon {
+  font-size: 2.5rem;
+}
+
+.stat-number {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #667eea;
+  line-height: 1.2;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: #6c757d;
+}
+
+.search-input {
+  border: 2px solid #e2e8f0;
+  padding: 0.75rem 1rem;
+}
+
+.search-input:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.student-table {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  table-layout: fixed;
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 2px solid #e9ecef;
+}
+
+.student-table thead th {
+  background: #f8f9fa;
+  font-weight: 600;
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+  color: #6c757d;
+  padding: 1rem;
+  border-bottom: 2px solid #e9ecef;
+  white-space: nowrap;
+  text-align: left;
+  border-right: 1px solid #e9ecef;
+  position: relative;
+}
+
+.student-table thead th:last-child {
+  border-right: none;
+}
+
+.student-table tbody td {
+  padding: 1rem;
+  vertical-align: middle;
+  border-bottom: 1px solid #e9ecef;
+  border-right: 1px solid #e9ecef;
+  transition: background-color 0.2s ease;
+  /* Prevent cell from expanding beyond colgroup width */
+  max-width: 0; 
+}
+
+.student-table tbody td:last-child {
+  border-right: none;
+}
+
+.student-table tbody tr:hover {
+  background: rgba(102, 126, 234, 0.05);
+}
+
+.student-table tbody tr:hover td {
+  border-bottom-color: #667eea;
+  border-right-color: #667eea;
+}
+
+.student-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.student-table tbody td.text-center {
+  text-align: center !important;
+}
+
+.student-id {
+  color: #667eea;
+  font-weight: 600;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.student-name, .student-email, .student-phone {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.student-name {
+  font-weight: 500;
+  color: #2d3748;
+}
+
+.student-email, .student-phone {
+  color: #4a5568;
+}
+
+.badge {
+  padding: 0.5rem 0.75rem;
+  font-weight: 600;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  flex-wrap: nowrap;
+}
+
+.action-buttons .btn {
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+.action-buttons .btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.empty-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.6s ease-out;
+}

@@ -11,15 +11,27 @@ const connectDB = async () => {
     console.log(`✅ Database Connected Successfully`);
     console.log(`📍 Database Name: student_management`);
     console.log(`🏢 MongoDB Server: ${conn.connection.host}:${conn.connection.port}`);
-    console.log(`📊 Database Status: ${conn.readyState === 1 ? 'Connected' : 'Disconnected'}`);
     
-    // List all collections
-    const db = mongoose.connection.db;
-    const collections = await db.listCollections();
-    console.log(`📚 Collections Found: ${collections.length}`);
-    collections.forEach(collection => {
-      console.log(`   - ${collection.name}`);
-    });
+    // Wait a moment to ensure connection is fully established
+    setTimeout(() => {
+      const connectionStatus = mongoose.connection.readyState;
+      const statusText = connectionStatus === 1 ? 'Connected' : 'Disconnected';
+      console.log(`📊 Database Status: ${statusText}`);
+      
+      if (connectionStatus === 1) {
+        // List all collections
+        mongoose.connection.db.listCollections().toArray((err, collections) => {
+          if (err) {
+            console.log(`📚 Collections Found: Error listing collections`);
+          } else {
+            console.log(`📚 Collections Found: ${collections.length}`);
+            collections.forEach(collection => {
+              console.log(`   - ${collection.name}`);
+            });
+          }
+        });
+      }
+    }, 100); // Small delay to ensure connection is fully established
     
   } catch (error) {
     console.error('❌ Database Connection Error:', error.message);
@@ -30,5 +42,30 @@ const connectDB = async () => {
     process.exit(1);
   }
 };
+
+// Handle connection events
+mongoose.connection.on('connected', () => {
+  console.log('📡 Mongoose connected to MongoDB');
+});
+
+mongoose.connection.on('error', (err) => {
+  console.error('❌ Mongoose connection error:', err);
+});
+
+mongoose.connection.on('disconnected', () => {
+  console.log('🔌 Mongoose disconnected from MongoDB');
+});
+
+// Handle application termination
+process.on('SIGINT', async () => {
+  try {
+    await mongoose.connection.close();
+    console.log('🔌 Mongoose connection closed through app termination');
+    process.exit(0);
+  } catch (err) {
+    console.error('Error closing connection:', err);
+    process.exit(1);
+  }
+});
 
 module.exports = connectDB;

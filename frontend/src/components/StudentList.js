@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
@@ -8,100 +8,15 @@ const StudentList = ({ students, loading, onDelete, onSearch }) => {
   const [studentToDelete, setStudentToDelete] = useState(null);
   const [sortBy, setSortBy] = useState('name');
   const [sortOrder, setSortOrder] = useState('asc');
-  const prevStudentsRef = useRef();
 
   // ------------------------------------------------------------
-  // 1. NORMALIZE STUDENT DATA (fix misaligned fields)
+  // 1. USE STUDENT DATA AS-IS (no normalization needed)
   // ------------------------------------------------------------
   const normalizedStudents = useMemo(() => {
     if (!students || students.length === 0) return [];
-
-    // Log the first student to see its raw structure (open browser console)
-    console.log('Raw student data (first):', students[0]);
-
-    return students.map(student => {
-      // Create a normalized copy
-      const normalized = { ...student };
-
-      // Helper: check if a string looks like an email
-      const looksLikeEmail = (str) => typeof str === 'string' && str.includes('@') && str.length > 5;
-
-      // Helper: check if a string looks like a phone number (only digits, length 10)
-      const looksLikePhone = (str) => /^\d{10}$/.test(String(str).replace(/\D/g, ''));
-
-      // Helper: check if a string looks like a student ID (alphanumeric, length 5-15)
-      const looksLikeStudentId = (str) => /^[A-Za-z0-9]{5,15}$/.test(String(str));
-
-      // Helper: check if a string looks like a department (common department names)
-      const looksLikeDepartment = (str) => {
-        const deptKeywords = ['COMPUTER', 'IT', 'INFORMATION', 'ELECTRONICS', 'MECHANICAL', 'CIVIL', 'ELECTRICAL', 'CHEMICAL', 'BIOTECH'];
-        const strUpper = String(str).toUpperCase();
-        return deptKeywords.some(keyword => strUpper.includes(keyword));
-      };
-
-      // Helper: check if a string looks like a year (contains year indicators)
-      const looksLikeYear = (str) => {
-        const yearKeywords = ['YEAR', '1ST', '2ND', '3RD', '4TH', 'FIRST', 'SECOND', 'THIRD', 'FOURTH'];
-        const strUpper = String(str).toUpperCase();
-        return yearKeywords.some(keyword => strUpper.includes(keyword));
-      };
-
-      // Check if data is shifted - this happens when the API returns misaligned data
-      // Pattern: studentId -> name, name -> email, email -> phone, phone -> department, department -> year
-      
-      // Check for the specific misalignment pattern where everything is shifted left
-      const isMisaligned = (
-        student.studentId && !looksLikeStudentId(student.studentId) &&
-        student.name && looksLikeEmail(student.name) &&
-        student.email && looksLikePhone(student.email) &&
-        student.phone && looksLikeDepartment(student.phone) &&
-        student.department && looksLikeYear(student.department)
-      );
-
-      if (isMisaligned) {
-        // Complete left shift - everything moves one column left
-        normalized.studentId = student.name;
-        normalized.name = student.email;
-        normalized.email = student.phone;
-        normalized.phone = student.department;
-        normalized.department = student.year;
-        // Year might be missing or in an extra field
-      } else {
-        // Individual field corrections if not the full pattern
-        // If studentId field contains what looks like a name (not an ID)
-        if (student.studentId && !looksLikeStudentId(student.studentId) && student.name) {
-          normalized.studentId = student.name;
-          normalized.name = student.email;
-          normalized.email = student.phone;
-          normalized.phone = student.department;
-          normalized.department = student.year;
-        }
-        // If name field contains what looks like an email
-        else if (student.name && looksLikeEmail(student.name) && student.email) {
-          normalized.name = student.email;
-          normalized.email = student.phone;
-          normalized.phone = student.department;
-          normalized.department = student.year;
-        }
-        // If email field contains what looks like a phone
-        else if (student.email && looksLikePhone(student.email) && student.phone) {
-          normalized.email = student.phone;
-          normalized.phone = student.department;
-          normalized.department = student.year;
-        }
-        // If phone field contains what looks like a department
-        else if (student.phone && looksLikeDepartment(student.phone) && student.department) {
-          normalized.phone = student.department;
-          normalized.department = student.year;
-        }
-        // If department field contains what looks like a year
-        else if (student.department && looksLikeYear(student.department)) {
-          normalized.department = student.year;
-        }
-      }
-
-      return normalized;
-    });
+    
+    // Return students as-is since the backend sends correctly aligned data
+    return students;
   }, [students]);
 
   // Memoize and sort normalized students
@@ -122,11 +37,20 @@ const StudentList = ({ students, loading, onDelete, onSearch }) => {
         
       case 'date':
         return sortedStudents.sort((a, b) => {
-          const dateA = new Date(a.createdAt || a._id || 0);
-          const dateB = new Date(b.createdAt || b._id || 0);
-          return sortOrder === 'asc' 
-            ? dateA - dateB
-            : dateB - dateA;
+          // Safely extract timestamps, falling back to 0 to prevent NaN sorting errors
+          const getTimestamp = (student) => {
+            if (student.createdAt) return new Date(student.createdAt).getTime();
+            // Optional: Extract timestamp from MongoDB ObjectId if applicable
+            if (student._id && typeof student._id === 'string' && student._id.length === 24) {
+              return parseInt(student._id.substring(0, 8), 16) * 1000;
+            }
+            return 0; // Safe fallback
+          };
+          
+          const timeA = getTimestamp(a);
+          const timeB = getTimestamp(b);
+          
+          return sortOrder === 'asc' ? timeA - timeB : timeB - timeA;
         });
         
       case 'name':
@@ -141,12 +65,6 @@ const StudentList = ({ students, loading, onDelete, onSearch }) => {
     }
   }, [normalizedStudents, sortBy, sortOrder]);
 
-  useEffect(() => {
-    if (prevStudentsRef.current !== memoizedStudents) {
-      prevStudentsRef.current = memoizedStudents;
-    }
-  }, [memoizedStudents]);
-
   // Handle search with debounce
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -156,8 +74,7 @@ const StudentList = ({ students, loading, onDelete, onSearch }) => {
   }, [searchQuery, onSearch]);
 
   const handleSearch = (e) => {
-    const query = e.target.value;
-    setSearchQuery(query);
+    setSearchQuery(e.target.value);
   };
 
   const handleDeleteClick = (student) => {
@@ -175,7 +92,6 @@ const StudentList = ({ students, loading, onDelete, onSearch }) => {
     }
   };
 
-  // Get department color
   const getDepartmentColor = (department) => {
     const colors = {
       'Computer Science': 'primary',
@@ -193,7 +109,6 @@ const StudentList = ({ students, loading, onDelete, onSearch }) => {
     return colors[department] || 'primary';
   };
 
-  // Format department name
   const formatDepartment = (dept) => {
     const deptMap = {
       'COMPUTER': 'Computer Science',
@@ -203,7 +118,6 @@ const StudentList = ({ students, loading, onDelete, onSearch }) => {
     return deptMap[dept] || dept;
   };
 
-  // Get year badge variant
   const getYearVariant = (year) => {
     const variants = {
       '1st Year': 'success',
@@ -218,7 +132,6 @@ const StudentList = ({ students, loading, onDelete, onSearch }) => {
     return variants[year] || 'primary';
   };
 
-  // Format year
   const formatYear = (year) => {
     const yearMap = {
       '2ND YEAR': '2nd Year',
@@ -369,15 +282,14 @@ const StudentList = ({ students, loading, onDelete, onSearch }) => {
             </div>
           ) : (
             <table className="table table-hover student-table">
-              {/* Column widths for proper alignment */}
               <colgroup>
-                <col style={{ width: '12%' }} /> {/* STUDENT ID */}
-                <col style={{ width: '20%' }} /> {/* NAME */}
-                <col style={{ width: '20%' }} /> {/* EMAIL */}
-                <col style={{ width: '12%' }} /> {/* PHONE */}
-                <col style={{ width: '12%' }} /> {/* DEPARTMENT */}
-                <col style={{ width: '8%' }} />  {/* YEAR */}
-                <col style={{ width: '16%' }} /> {/* ACTIONS */}
+                <col style={{ width: '12%' }} />
+                <col style={{ width: '20%' }} />
+                <col style={{ width: '20%' }} />
+                <col style={{ width: '12%' }} />
+                <col style={{ width: '12%' }} />
+                <col style={{ width: '8%' }} />
+                <col style={{ width: '16%' }} />
               </colgroup>
               <thead>
                 <tr>
@@ -397,7 +309,7 @@ const StudentList = ({ students, loading, onDelete, onSearch }) => {
                       <strong className="student-id">{student.studentId || ''}</strong>
                     </td>
                     <td>
-                      <span className="student-name">{student.name || ''}</span>
+                      <span className="student-name" title={student.name}>{student.name || ''}</span>
                     </td>
                     <td>
                       <span className="student-email" title={student.email}>{student.email || ''}</span>
