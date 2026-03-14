@@ -235,7 +235,7 @@ body::before {
   width: 100%;
   table-layout: fixed;
   border-collapse: separate;
-  border-spacing: 0;
+  border-spacing: 2px;
 }
 
 .table-responsive {
@@ -251,8 +251,6 @@ body::before {
   background: rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.3);
-  border-right: none;
-  border-bottom: 2px solid rgba(255, 255, 255, 0.3);
   font-weight: 600;
   color: var(--dark-color);
   text-transform: uppercase;
@@ -272,7 +270,6 @@ body::before {
 
 .table tbody tr {
   transition: var(--transition);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   position: relative;
 }
 
@@ -301,9 +298,7 @@ body::before {
 .table tbody td {
   padding: 0.75rem 0.5rem;
   vertical-align: middle;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-right: none;
-  border-bottom: none;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   font-family: 'Poppins', sans-serif;
   text-align: left;
   white-space: nowrap;
@@ -312,13 +307,13 @@ body::before {
 }
 
 /* Fixed column widths */
-.table th:nth-child(1), .table td:nth-child(1) { width: 100px; } /* Student ID */
-.table th:nth-child(2), .table td:nth-child(2) { width: 180px; } /* Name */
-.table th:nth-child(3), .table td:nth-child(3) { width: 220px; } /* Email */
-.table th:nth-child(4), .table td:nth-child(4) { width: 130px; } /* Phone */
-.table th:nth-child(5), .table td:nth-child(5) { width: 130px; } /* Department */
-.table th:nth-child(6), .table td:nth-child(6) { width: 80px; } /* Year */
-.table th:nth-child(7), .table td:nth-child(7) { width: 100px; } /* Actions */
+.table th:nth-child(1), .table td:nth-child(1) { width: 120px; } /* Student ID */
+.table th:nth-child(2), .table td:nth-child(2) { width: 200px; } /* Name */
+.table th:nth-child(3), .table td:nth-child(3) { width: 250px; } /* Email */
+.table th:nth-child(4), .table td:nth-child(4) { width: 140px; } /* Phone */
+.table th:nth-child(5), .table td:nth-child(5) { width: 150px; } /* Department */
+.table th:nth-child(6), .table td:nth-child(6) { width: 100px; } /* Year */
+.table th:nth-child(7), .table td:nth-child(7) { width: 120px; } /* Actions */
 
 /* Glassmorphism Navbar */
 .navbar {

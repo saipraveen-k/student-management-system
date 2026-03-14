@@ -84,8 +84,8 @@ const EditStudent = ({ onUpdate, loading }) => {
       case 'studentId':
         if (!value.trim()) {
           newErrors.studentId = 'Student ID is required';
-        } else if (!/^[0-9]{2}[B][0-9]{2}[A][I][0-9]{3}$/.test(value)) {
-          newErrors.studentId = 'Student ID must be in format: 25B21AI024 (Year-Batch-YearSemCode-Course-RollNo)';
+        } else if (!/^[0-9]{2}[B][0-9]{2}[A-Z]{2}[0-9]{3}$/.test(value)) {
+          newErrors.studentId = 'Student ID must be in format: 24B11IT263 (Year-Batch-YearSemCode-Course-RollNo)';
         } else {
           delete newErrors.studentId;
         }
@@ -158,7 +158,6 @@ const EditStudent = ({ onUpdate, loading }) => {
 
   // Validate entire form
   const validateForm = () => {
-    const newErrors = {};
     let isValid = true;
 
     // Validate all fields

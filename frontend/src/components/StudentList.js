@@ -6,13 +6,142 @@ const StudentList = ({ students, loading, onDelete, onSearch }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [studentToDelete, setStudentToDelete] = useState(null);
+  const [sortBy, setSortBy] = useState('name');
+  const [sortOrder, setSortOrder] = useState('asc');
   const prevStudentsRef = useRef();
 
-  // Memoize students to prevent unnecessary re-renders
-  const memoizedStudents = useMemo(() => students, [students]);
+  // ------------------------------------------------------------
+  // 1. NORMALIZE STUDENT DATA (fix misaligned fields)
+  // ------------------------------------------------------------
+  const normalizedStudents = useMemo(() => {
+    if (!students || students.length === 0) return [];
+
+    // Log the first student to see its raw structure (open browser console)
+    console.log('Raw student data (first):', students[0]);
+
+    return students.map(student => {
+      // Create a normalized copy
+      const normalized = { ...student };
+
+      // Helper: check if a string looks like an email
+      const looksLikeEmail = (str) => typeof str === 'string' && str.includes('@') && str.length > 5;
+
+      // Helper: check if a string looks like a phone number (only digits, length 10)
+      const looksLikePhone = (str) => /^\d{10}$/.test(String(str).replace(/\D/g, ''));
+
+      // Helper: check if a string looks like a student ID (alphanumeric, length 5-15)
+      const looksLikeStudentId = (str) => /^[A-Za-z0-9]{5,15}$/.test(String(str));
+
+      // Helper: check if a string looks like a department (common department names)
+      const looksLikeDepartment = (str) => {
+        const deptKeywords = ['COMPUTER', 'IT', 'INFORMATION', 'ELECTRONICS', 'MECHANICAL', 'CIVIL', 'ELECTRICAL', 'CHEMICAL', 'BIOTECH'];
+        const strUpper = String(str).toUpperCase();
+        return deptKeywords.some(keyword => strUpper.includes(keyword));
+      };
+
+      // Helper: check if a string looks like a year (contains year indicators)
+      const looksLikeYear = (str) => {
+        const yearKeywords = ['YEAR', '1ST', '2ND', '3RD', '4TH', 'FIRST', 'SECOND', 'THIRD', 'FOURTH'];
+        const strUpper = String(str).toUpperCase();
+        return yearKeywords.some(keyword => strUpper.includes(keyword));
+      };
+
+      // Check if data is shifted - this happens when the API returns misaligned data
+      // Pattern: studentId -> name, name -> email, email -> phone, phone -> department, department -> year
+      
+      // Check for the specific misalignment pattern where everything is shifted left
+      const isMisaligned = (
+        student.studentId && !looksLikeStudentId(student.studentId) &&
+        student.name && looksLikeEmail(student.name) &&
+        student.email && looksLikePhone(student.email) &&
+        student.phone && looksLikeDepartment(student.phone) &&
+        student.department && looksLikeYear(student.department)
+      );
+
+      if (isMisaligned) {
+        // Complete left shift - everything moves one column left
+        normalized.studentId = student.name;
+        normalized.name = student.email;
+        normalized.email = student.phone;
+        normalized.phone = student.department;
+        normalized.department = student.year;
+        // Year might be missing or in an extra field
+      } else {
+        // Individual field corrections if not the full pattern
+        // If studentId field contains what looks like a name (not an ID)
+        if (student.studentId && !looksLikeStudentId(student.studentId) && student.name) {
+          normalized.studentId = student.name;
+          normalized.name = student.email;
+          normalized.email = student.phone;
+          normalized.phone = student.department;
+          normalized.department = student.year;
+        }
+        // If name field contains what looks like an email
+        else if (student.name && looksLikeEmail(student.name) && student.email) {
+          normalized.name = student.email;
+          normalized.email = student.phone;
+          normalized.phone = student.department;
+          normalized.department = student.year;
+        }
+        // If email field contains what looks like a phone
+        else if (student.email && looksLikePhone(student.email) && student.phone) {
+          normalized.email = student.phone;
+          normalized.phone = student.department;
+          normalized.department = student.year;
+        }
+        // If phone field contains what looks like a department
+        else if (student.phone && looksLikeDepartment(student.phone) && student.department) {
+          normalized.phone = student.department;
+          normalized.department = student.year;
+        }
+        // If department field contains what looks like a year
+        else if (student.department && looksLikeYear(student.department)) {
+          normalized.department = student.year;
+        }
+      }
+
+      return normalized;
+    });
+  }, [students]);
+
+  // Memoize and sort normalized students
+  const memoizedStudents = useMemo(() => {
+    if (!normalizedStudents || normalizedStudents.length === 0) return [];
+    
+    const sortedStudents = [...normalizedStudents];
+    
+    switch (sortBy) {
+      case 'department':
+        return sortedStudents.sort((a, b) => {
+          const deptA = a.department || '';
+          const deptB = b.department || '';
+          return sortOrder === 'asc' 
+            ? deptA.localeCompare(deptB)
+            : deptB.localeCompare(deptA);
+        });
+        
+      case 'date':
+        return sortedStudents.sort((a, b) => {
+          const dateA = new Date(a.createdAt || a._id || 0);
+          const dateB = new Date(b.createdAt || b._id || 0);
+          return sortOrder === 'asc' 
+            ? dateA - dateB
+            : dateB - dateA;
+        });
+        
+      case 'name':
+      default:
+        return sortedStudents.sort((a, b) => {
+          const nameA = a.name || '';
+          const nameB = b.name || '';
+          return sortOrder === 'asc' 
+            ? nameA.localeCompare(nameB)
+            : nameB.localeCompare(nameA);
+        });
+    }
+  }, [normalizedStudents, sortBy, sortOrder]);
 
   useEffect(() => {
-    // Only trigger animation when students actually change
     if (prevStudentsRef.current !== memoizedStudents) {
       prevStudentsRef.current = memoizedStudents;
     }
@@ -26,19 +155,16 @@ const StudentList = ({ students, loading, onDelete, onSearch }) => {
     return () => clearTimeout(timer);
   }, [searchQuery, onSearch]);
 
-  // Handle search
   const handleSearch = (e) => {
     const query = e.target.value;
     setSearchQuery(query);
   };
 
-  // Handle delete confirmation
   const handleDeleteClick = (student) => {
     setStudentToDelete(student);
     setShowDeleteModal(true);
   };
 
-  // Confirm delete
   const confirmDelete = async () => {
     if (studentToDelete) {
       const success = await onDelete(studentToDelete._id);
@@ -59,9 +185,22 @@ const StudentList = ({ students, loading, onDelete, onSearch }) => {
       'Civil': 'secondary',
       'Electrical': 'danger',
       'Chemical': 'dark',
-      'Biotechnology': 'info'
+      'Biotechnology': 'info',
+      'COMPUTER SC': 'primary',
+      'INFORMATION': 'info',
+      'COMPUTER': 'primary'
     };
     return colors[department] || 'primary';
+  };
+
+  // Format department name
+  const formatDepartment = (dept) => {
+    const deptMap = {
+      'COMPUTER': 'Computer Science',
+      'COMPUTER SC': 'Computer Science',
+      'INFORMATION': 'Information Technology'
+    };
+    return deptMap[dept] || dept;
   };
 
   // Get year badge variant
@@ -70,332 +209,280 @@ const StudentList = ({ students, loading, onDelete, onSearch }) => {
       '1st Year': 'success',
       '2nd Year': 'primary',
       '3rd Year': 'warning',
-      '4th Year': 'danger'
+      '4th Year': 'danger',
+      '2ND YEAR': 'primary',
+      '1ST YEAR': 'success',
+      '3RD YEAR': 'warning',
+      '4TH YEAR': 'danger'
     };
     return variants[year] || 'primary';
   };
 
+  // Format year
+  const formatYear = (year) => {
+    const yearMap = {
+      '2ND YEAR': '2nd Year',
+      '1ST YEAR': '1st Year',
+      '3RD YEAR': '3rd Year',
+      '4TH YEAR': '4th Year'
+    };
+    return yearMap[year] || year;
+  };
+
   return (
     <div className="student-list fade-in-up">
-      {/* Header with Stats */}
+      {/* Header */}
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h2 className="mb-2 d-flex align-items-center">
+            <span className="header-icon">👥</span>
+            Student Records
+          </h2>
+          <p className="text-muted mb-0">
+            Manage and track all student information in one place
+          </p>
+        </div>
+        <Link to="/add" className="btn btn-primary d-flex align-items-center">
+          <span className="btn-icon">➕</span>
+          Add New Student
+        </Link>
+      </div>
+
+      {/* Stats Cards */}
       <div className="row mb-4">
-        <div className="col-lg-8">
-          <div className="d-flex justify-content-between align-items-center mb-4">
+        <div className="col-md-3">
+          <div className="stat-card">
+            <div className="stat-icon">📊</div>
             <div>
-              <h2 className="mb-2 d-flex align-items-center">
-                <span className="header-icon">👥</span>
-                Student Records
-              </h2>
-              <p className="text-muted mb-0">
-                Manage and track all student information in one place
-              </p>
+              <div className="stat-number">{memoizedStudents.length}</div>
+              <div className="stat-label">Total Students</div>
             </div>
-            <Link to="/add" className="btn btn-primary btn-lg d-flex align-items-center">
-              <span className="btn-icon">➕</span>
-              Add New Student
-            </Link>
           </div>
         </div>
-        <div className="col-lg-4">
-          <div className="stats-cards">
-            <div className="stat-card">
-              <div className="stat-icon">📊</div>
-              <div className="stat-content">
-                <div className="stat-number">{memoizedStudents.length}</div>
-                <div className="stat-label">Total Students</div>
-              </div>
+        <div className="col-md-3">
+          <div className="stat-card">
+            <div className="stat-icon">🔍</div>
+            <div>
+              <div className="stat-number">{searchQuery ? 'Filtered' : 'All'}</div>
+              <div className="stat-label">Search Status</div>
             </div>
-            <div className="stat-card">
-              <div className="stat-icon">🔍</div>
-              <div className="stat-content">
-                <div className="stat-number">{searchQuery ? 'Filtered' : 'All'}</div>
-                <div className="stat-label">Search Status</div>
-              </div>
+          </div>
+        </div>
+        <div className="col-md-6">
+          <div className="d-flex justify-content-end gap-2">
+            <div className="btn-group">
+              <button 
+                className={`btn btn-outline-primary ${sortBy === 'name' ? 'active' : ''}`}
+                onClick={() => {
+                  if (sortBy === 'name') {
+                    setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                  } else {
+                    setSortBy('name');
+                    setSortOrder('asc');
+                  }
+                }}
+              >
+                Sort by Name {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
+              </button>
+              <button 
+                className={`btn btn-outline-primary ${sortBy === 'department' ? 'active' : ''}`}
+                onClick={() => {
+                  if (sortBy === 'department') {
+                    setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                  } else {
+                    setSortBy('department');
+                    setSortOrder('asc');
+                  }
+                }}
+              >
+                Sort by Dept {sortBy === 'department' && (sortOrder === 'asc' ? '↑' : '↓')}
+              </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Enhanced Search Bar */}
-      <div className="row mb-4">
-        <div className="col-md-8">
-          <div className="search-container">
-            <div className="input-group input-group-lg">
-              <span className="input-group-text">
-                <span className="search-icon">🔍</span>
-              </span>
-              <input
-                type="text"
-                className="form-control search-input"
-                placeholder="Search by name, ID, or department..."
-                value={searchQuery}
-                onChange={handleSearch}
-              />
-              {searchQuery && (
-                <button 
-                  className="btn btn-outline-secondary" 
-                  onClick={() => setSearchQuery('')}
-                  type="button"
-                >
-                  ✖
-                </button>
-              )}
-            </div>
+      {/* Search Bar */}
+      <div className="mb-4">
+        <div className="search-container">
+          <div className="input-group">
+            <span className="input-group-text">
+              <span>🔍</span>
+            </span>
+            <input
+              type="text"
+              className="form-control search-input"
+              placeholder="Search by name, ID, or department..."
+              value={searchQuery}
+              onChange={handleSearch}
+            />
             {searchQuery && (
-              <div className="search-info mt-2">
-                <small className="text-muted">
-                  Searching for: <strong>"{searchQuery}"</strong> • {memoizedStudents.length} results found
-                </small>
-              </div>
+              <button 
+                className="btn btn-outline-secondary" 
+                onClick={() => setSearchQuery('')}
+                type="button"
+              >
+                ✖
+              </button>
             )}
           </div>
-        </div>
-        <div className="col-md-4">
-          <div className="filter-buttons d-flex gap-2">
-            <button className="btn btn-outline-primary btn-sm">
-              📅 Sort by Date
-            </button>
-            <button className="btn btn-outline-primary btn-sm">
-              📚 Sort by Department
-            </button>
-          </div>
+          {searchQuery && (
+            <div className="search-info mt-2">
+              <small className="text-muted">
+                Searching for: <strong>"{searchQuery}"</strong> • {memoizedStudents.length} results found
+              </small>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Loading State */}
       {loading && (
         <div className="text-center py-5">
-          <div className="loading-spinner">
-            <div className="spinner-border text-primary" role="status">
-              <span className="visually-hidden">Loading...</span>
-            </div>
-            <div className="mt-3">
-              <h5>Loading Students...</h5>
-              <p className="text-muted">Please wait while we fetch the data</p>
-            </div>
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+          <div className="mt-3">
+            <h5>Loading Students...</h5>
           </div>
         </div>
       )}
 
       {/* Students Table */}
       {!loading && (
-        <div className="table-container">
+        <div className="table-responsive">
           {memoizedStudents.length === 0 ? (
             <div className="empty-state">
               <div className="empty-icon">📚</div>
-              <h5 className="empty-title">No Students Found</h5>
-              <p className="empty-description">
+              <h5>No Students Found</h5>
+              <p className="text-muted">
                 {searchQuery ? 
-                  `No students matching "${searchQuery}". Try a different search term.` : 
-                  'Start by adding your first student to the system.'
+                  `No students matching "${searchQuery}"` : 
+                  'Start by adding your first student'
                 }
               </p>
               {!searchQuery && (
-                <Link to="/add" className="btn btn-primary btn-lg">
-                  <span className="btn-icon">➕</span>
+                <Link to="/add" className="btn btn-primary">
                   Add First Student
                 </Link>
               )}
             </div>
           ) : (
-            <div className="card table-card">
-              <div className="card-body p-0">
-                <div className="table-responsive">
-                  <table className="table table-hover mb-0">
-                    <thead>
-                      <tr>
-                        <th scope="col" style={{width: '120px'}}>
-                          <div className="d-flex align-items-center">
-                            <span>🆔</span>
-                            <span className="ms-2">Student ID</span>
-                          </div>
-                        </th>
-                        <th scope="col" style={{width: '200px'}}>
-                          <div className="d-flex align-items-center">
-                            <span>👤</span>
-                            <span className="ms-2">Name</span>
-                          </div>
-                        </th>
-                        <th scope="col" style={{width: '250px'}}>
-                          <div className="d-flex align-items-center">
-                            <span>📧</span>
-                            <span className="ms-2">Email</span>
-                          </div>
-                        </th>
-                        <th scope="col" style={{width: '140px'}}>
-                          <div className="d-flex align-items-center">
-                            <span>📱</span>
-                            <span className="ms-2">Phone</span>
-                          </div>
-                        </th>
-                        <th scope="col" style={{width: '150px'}}>
-                          <div className="d-flex align-items-center">
-                            <span>🏢</span>
-                            <span className="ms-2">Department</span>
-                          </div>
-                        </th>
-                        <th scope="col" style={{width: '100px'}}>
-                          <div className="d-flex align-items-center">
-                            <span>📅</span>
-                            <span className="ms-2">Year</span>
-                          </div>
-                        </th>
-                        <th scope="col" style={{width: '120px'}} className="text-center">
-                          <div className="d-flex align-items-center justify-content-center">
-                            <span>⚙️</span>
-                            <span className="ms-2">Actions</span>
-                          </div>
-                        </th>
-                      </tr>
-                    </thead>
-                        <tbody>
-                      {memoizedStudents.map((student, index) => (
-                        <tr 
-                          key={student._id} 
-                          className={`student-row fade-in-up`}
-                          style={{ animationDelay: `${index * 0.1}s` }}
+            <table className="table table-hover student-table">
+              {/* Column widths for proper alignment */}
+              <colgroup>
+                <col style={{ width: '12%' }} /> {/* STUDENT ID */}
+                <col style={{ width: '20%' }} /> {/* NAME */}
+                <col style={{ width: '20%' }} /> {/* EMAIL */}
+                <col style={{ width: '12%' }} /> {/* PHONE */}
+                <col style={{ width: '12%' }} /> {/* DEPARTMENT */}
+                <col style={{ width: '8%' }} />  {/* YEAR */}
+                <col style={{ width: '16%' }} /> {/* ACTIONS */}
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>STUDENT ID</th>
+                  <th>NAME</th>
+                  <th>EMAIL</th>
+                  <th>PHONE</th>
+                  <th>DEPARTMENT</th>
+                  <th>YEAR</th>
+                  <th className="text-center">ACTIONS</th>
+                </tr>
+              </thead>
+              <tbody>
+                {memoizedStudents.map((student, index) => (
+                  <tr key={student._id || index}>
+                    <td>
+                      <strong className="student-id">{student.studentId || ''}</strong>
+                    </td>
+                    <td>
+                      <span className="student-name">{student.name || ''}</span>
+                    </td>
+                    <td>
+                      <span className="student-email" title={student.email}>{student.email || ''}</span>
+                    </td>
+                    <td>
+                      <span className="student-phone" title={student.phone}>{student.phone || ''}</span>
+                    </td>
+                    <td>
+                      <span className={`badge bg-${getDepartmentColor(student.department)}`}>
+                        {formatDepartment(student.department)}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`badge bg-${getYearVariant(student.year)}`}>
+                        {formatYear(student.year)}
+                      </span>
+                    </td>
+                    <td className="text-center">
+                      <div className="action-buttons">
+                        <Link 
+                          to={`/edit/${student._id}`} 
+                          className="btn btn-sm btn-outline-primary"
+                          title="Edit Student"
                         >
-                          <td style={{width: '120px', padding: '1rem'}}>
-                            <div className="student-id">
-                              <strong>{student.studentId}</strong>
-                            </div>
-                          </td>
-                          <td style={{width: '200px', padding: '1rem'}}>
-                            <div className="student-info">
-                              <div className="student-name">{student.name}</div>
-                            </div>
-                          </td>
-                          <td style={{width: '250px', padding: '1rem'}}>
-                            <div className="contact-info">
-                              <span className="email-text">{student.email}</span>
-                            </div>
-                          </td>
-                          <td style={{width: '140px', padding: '1rem'}}>
-                            <div className="phone-info">
-                              <span className="phone-text">📞 {student.phone}</span>
-                            </div>
-                          </td>
-                          <td style={{width: '150px', padding: '1rem'}}>
-                            <span className={`badge bg-${getDepartmentColor(student.department)} department-badge`}>
-                              {student.department}
-                            </span>
-                          </td>
-                          <td style={{width: '100px', padding: '1rem'}}>
-                            <span className={`badge bg-${getYearVariant(student.year)} year-badge`}>
-                              {student.year}
-                            </span>
-                          </td>
-                          <td style={{width: '120px', padding: '1rem'}} className="text-center">
-                            <div className="action-buttons">
-                              <Link 
-                                to={`/edit/${student._id}`} 
-                                className="btn btn-sm btn-outline-primary action-btn edit-btn"
-                                title="Edit Student"
-                              >
-                                <span>✏️</span>
-                              </Link>
-                              <button 
-                                className="btn btn-sm btn-outline-danger action-btn delete-btn"
-                                onClick={() => handleDeleteClick(student)}
-                                title="Delete Student"
-                              >
-                                <span>🗑️</span>
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
+                          ✏️
+                        </Link>
+                        <button 
+                          className="btn btn-sm btn-outline-danger"
+                          onClick={() => handleDeleteClick(student)}
+                          title="Delete Student"
+                        >
+                          🗑️
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           )}
         </div>
       )}
 
-      {/* Enhanced Delete Confirmation Modal */}
+      {/* Delete Confirmation Modal */}
       {showDeleteModal && studentToDelete && (
-        <div className="modal fade show d-block" tabIndex="-1">
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title d-flex align-items-center">
-                  <span className="modal-icon">⚠️</span>
-                  Confirm Delete
-                </h5>
-                <button 
-                  type="button" 
-                  className="btn-close" 
-                  onClick={() => setShowDeleteModal(false)}
-                ></button>
-              </div>
-              <div className="modal-body">
-                <div className="delete-warning">
-                  <p className="warning-text">
-                    Are you sure you want to delete this student record?
-                  </p>
-                  <div className="student-preview">
-                    <div className="preview-card">
-                      <div className="preview-header">
-                        <strong>{studentToDelete.name}</strong>
-                        <span className="preview-id">({studentToDelete.studentId})</span>
-                      </div>
-                      <div className="preview-details">
-                        <div className="detail-item">
-                          <span className="detail-label">📧 Email:</span>
-                          <span className="detail-value">{studentToDelete.email}</span>
-                        </div>
-                        <div className="detail-item">
-                          <span className="detail-label">🏢 Department:</span>
-                          <span className="detail-value">{studentToDelete.department}</span>
-                        </div>
-                        <div className="detail-item">
-                          <span className="detail-label">📅 Year:</span>
-                          <span className="detail-value">{studentToDelete.year}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="alert alert-danger mt-3">
-                    <strong>⚠️ Warning:</strong> This action cannot be undone. All student data will be permanently deleted.
-                  </div>
+        <>
+          <div className="modal fade show d-block" tabIndex="-1">
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">
+                    <span className="me-2">⚠️</span>
+                    Confirm Delete
+                  </h5>
+                  <button 
+                    type="button" 
+                    className="btn-close" 
+                    onClick={() => setShowDeleteModal(false)}
+                  ></button>
                 </div>
-              </div>
-              <div className="modal-footer">
-                <button 
-                  type="button" 
-                  className="btn btn-secondary" 
-                  onClick={() => setShowDeleteModal(false)}
-                >
-                  <span>❌</span> Cancel
-                </button>
-                <button 
-                  type="button" 
-                  className="btn btn-danger" 
-                  onClick={confirmDelete}
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <>
-                      <span className="spinner-border spinner-border-sm me-2"></span>
-                      Deleting...
-                    </>
-                  ) : (
-                    <>
-                      <span>🗑️</span> Delete Student
-                    </>
-                  )}
-                </button>
+                <div className="modal-body">
+                  <p>Are you sure you want to delete <strong>{studentToDelete.name}</strong>?</p>
+                  <p className="text-danger mb-0">This action cannot be undone.</p>
+                </div>
+                <div className="modal-footer">
+                  <button 
+                    type="button" 
+                    className="btn btn-secondary" 
+                    onClick={() => setShowDeleteModal(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="button" 
+                    className="btn btn-danger" 
+                    onClick={confirmDelete}
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Modal Backdrop */}
-      {showDeleteModal && (
-        <div className="modal-backdrop fade show"></div>
+          <div className="modal-backdrop fade show"></div>
+        </>
       )}
 
       <style jsx>{`
@@ -408,37 +495,25 @@ const StudentList = ({ students, loading, onDelete, onSearch }) => {
           margin-right: 0.5rem;
         }
 
-        .stats-cards {
-          display: flex;
-          gap: 1rem;
-          margin-top: 1rem;
-        }
-
         .stat-card {
-          flex: 1;
           background: white;
           border-radius: 12px;
-          padding: 1rem;
+          padding: 1.5rem;
           box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
           display: flex;
           align-items: center;
-          transition: all 0.3s ease;
-        }
-
-        .stat-card:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15);
+          gap: 1rem;
         }
 
         .stat-icon {
-          font-size: 2rem;
-          margin-right: 0.75rem;
+          font-size: 2.5rem;
         }
 
         .stat-number {
-          font-size: 1.5rem;
+          font-size: 2rem;
           font-weight: 700;
           color: #667eea;
+          line-height: 1.2;
         }
 
         .stat-label {
@@ -446,20 +521,9 @@ const StudentList = ({ students, loading, onDelete, onSearch }) => {
           color: #6c757d;
         }
 
-        .search-container {
-          position: relative;
-        }
-
-        .search-icon {
-          font-size: 1.2rem;
-        }
-
         .search-input {
-          border-radius: 12px;
           border: 2px solid #e2e8f0;
           padding: 0.75rem 1rem;
-          font-size: 1rem;
-          transition: all 0.3s ease;
         }
 
         .search-input:focus {
@@ -467,19 +531,111 @@ const StudentList = ({ students, loading, onDelete, onSearch }) => {
           box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
-        .search-info {
-          padding: 0.5rem 1rem;
-          background: rgba(102, 126, 234, 0.1);
+        .student-table {
+          background: white;
+          border-radius: 12px;
+          overflow: hidden;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+          table-layout: fixed; /* Ensures column widths are respected */
+          width: 100%;
+          border-collapse: separate;
+          border-spacing: 0;
+          border: 2px solid #e9ecef;
+        }
+
+        .student-table thead th {
+          background: #f8f9fa;
+          font-weight: 600;
+          font-size: 0.85rem;
+          letter-spacing: 0.5px;
+          color: #6c757d;
+          padding: 1rem;
+          border-bottom: 2px solid #e9ecef;
+          white-space: nowrap;
+          text-align: left;
+          border-right: 1px solid #e9ecef;
+          position: relative;
+        }
+
+        .student-table thead th:last-child {
+          border-right: none;
+        }
+
+        .student-table tbody td {
+          padding: 1rem;
+          vertical-align: middle;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          border-bottom: 1px solid #e9ecef;
+          border-right: 1px solid #e9ecef;
+          transition: background-color 0.2s ease;
+        }
+
+        .student-table tbody td:last-child {
+          border-right: none;
+        }
+
+        .student-table tbody tr:hover {
+          background: rgba(102, 126, 234, 0.05);
+        }
+
+        .student-table tbody tr:hover td {
+          border-bottom-color: #667eea;
+          border-right-color: #667eea;
+        }
+
+        .student-table tbody tr:last-child td {
+          border-bottom: none;
+        }
+
+        /* Ensure proper alignment for action buttons */
+        .student-table tbody td.text-center {
+          text-align: center !important;
+        }
+
+        .student-id {
+          color: #667eea;
+          font-weight: 600;
+        }
+
+        .student-name {
+          font-weight: 500;
+          color: #2d3748;
+        }
+
+        .student-email, .student-phone {
+          display: block;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          color: #4a5568;
+        }
+
+        .badge {
+          padding: 0.5rem 0.75rem;
+          font-weight: 600;
           border-radius: 8px;
-          border-left: 4px solid #667eea;
+          font-size: 0.75rem;
+          white-space: nowrap;
         }
 
-        .filter-buttons {
-          align-items: flex-end;
+        .action-buttons {
+          display: flex;
+          gap: 0.5rem;
+          justify-content: center;
+          flex-wrap: nowrap;
         }
 
-        .loading-spinner {
-          padding: 3rem 0;
+        .action-buttons .btn {
+          padding: 0.25rem 0.75rem;
+          border-radius: 6px;
+          transition: all 0.3s ease;
+        }
+
+        .action-buttons .btn:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
         .empty-state {
@@ -496,205 +652,6 @@ const StudentList = ({ students, loading, onDelete, onSearch }) => {
           opacity: 0.5;
         }
 
-        .empty-title {
-          font-size: 1.5rem;
-          font-weight: 600;
-          margin-bottom: 1rem;
-          color: #2d3748;
-        }
-
-        .empty-description {
-          font-size: 1rem;
-          color: #6c757d;
-          margin-bottom: 2rem;
-        }
-
-        .table-container {
-          width: 100%;
-          overflow-x: auto;
-        }
-
-        .table-card {
-          border-radius: 12px;
-          overflow: hidden;
-          margin: 0;
-        }
-
-        .student-row {
-          transition: all 0.3s ease;
-          border-bottom: 1px solid #e9ecef;
-        }
-
-        .student-row:hover {
-          background: rgba(102, 126, 234, 0.05);
-        }
-
-        .student-row:last-child {
-          border-bottom: none;
-        }
-
-        .student-id {
-          font-weight: 700;
-          color: #667eea;
-          letter-spacing: 0.5px;
-          text-transform: uppercase;
-          font-size: 0.875rem;
-        }
-
-        .student-info {
-          display: flex;
-          flex-direction: column;
-          min-width: 0;
-        }
-
-        .student-name {
-          font-weight: 700;
-          color: #2d3748;
-          font-size: 1rem;
-          line-height: 1.4;
-        }
-
-        .contact-info {
-          display: flex;
-          align-items: center;
-          min-width: 0;
-        }
-
-        .email-text {
-          font-size: 0.9rem;
-          color: #495057;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        .phone-info {
-          display: flex;
-          align-items: center;
-          min-width: 0;
-        }
-
-        .phone-text {
-          font-size: 0.9rem;
-          color: #495057;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-
-        .department-badge, .year-badge {
-          padding: 0.5rem 0.75rem;
-          font-weight: 600;
-          border-radius: 8px;
-          font-size: 0.75rem;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-          white-space: nowrap;
-          border: none;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .action-buttons {
-          display: flex;
-          gap: 0.75rem;
-          justify-content: center;
-          align-items: center;
-          min-width: 140px;
-        }
-
-        .action-btn {
-          padding: 0.5rem 0.75rem;
-          border-radius: 8px;
-          transition: all 0.3s ease;
-          border: 2px solid;
-          font-weight: 600;
-          font-size: 0.875rem;
-        }
-
-        .action-btn:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-
-        .edit-btn {
-          border-color: #667eea;
-          color: #667eea;
-        }
-
-        .edit-btn:hover {
-          background: #667eea;
-          color: white;
-        }
-
-        .delete-btn {
-          border-color: #f56565;
-          color: #f56565;
-        }
-
-        .delete-btn:hover {
-          background: #f56565;
-          color: white;
-        }
-
-        .modal-icon {
-          font-size: 1.5rem;
-          margin-right: 0.5rem;
-        }
-
-        .delete-warning {
-          text-align: center;
-        }
-
-        .warning-text {
-          font-size: 1.1rem;
-          margin-bottom: 1.5rem;
-          color: #2d3748;
-        }
-
-        .student-preview {
-          margin: 1.5rem 0;
-        }
-
-        .preview-card {
-          background: #f8f9fa;
-          border-radius: 8px;
-          padding: 1rem;
-          border-left: 4px solid #f56565;
-        }
-
-        .preview-header {
-          font-size: 1.1rem;
-          margin-bottom: 0.5rem;
-        }
-
-        .preview-id {
-          color: #6c757d;
-          margin-left: 0.5rem;
-        }
-
-        .preview-details {
-          display: flex;
-          flex-direction: column;
-          gap: 0.25rem;
-        }
-
-        .detail-item {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-
-        .detail-label {
-          font-weight: 500;
-          color: #6c757d;
-        }
-
-        .detail-value {
-          font-weight: 600;
-          color: #2d3748;
-        }
-
         @keyframes fadeInUp {
           from {
             opacity: 0;
@@ -708,29 +665,6 @@ const StudentList = ({ students, loading, onDelete, onSearch }) => {
 
         .fade-in-up {
           animation: fadeInUp 0.6s ease-out;
-        }
-
-        @media (max-width: 768px) {
-          .stats-cards {
-            flex-direction: column;
-          }
-          
-          .filter-buttons {
-            margin-top: 1rem;
-            justify-content: center;
-          }
-          
-          .action-buttons {
-            flex-direction: column;
-          }
-          
-          .table {
-            font-size: 0.875rem;
-          }
-          
-          .student-email-small {
-            display: none;
-          }
         }
       `}</style>
     </div>
