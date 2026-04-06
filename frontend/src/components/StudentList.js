@@ -281,74 +281,67 @@ const StudentList = ({ students, loading, onDelete, onSearch }) => {
               )}
             </div>
           ) : (
-            <table className="table table-hover student-table">
-              <colgroup>
-                <col style={{ width: '12%' }} />
-                <col style={{ width: '20%' }} />
-                <col style={{ width: '20%' }} />
-                <col style={{ width: '12%' }} />
-                <col style={{ width: '12%' }} />
-                <col style={{ width: '8%' }} />
-                <col style={{ width: '16%' }} />
-              </colgroup>
-              <thead>
-                <tr>
-                  <th>STUDENT ID</th>
-                  <th>NAME</th>
-                  <th>EMAIL</th>
-                  <th>PHONE</th>
-                  <th>DEPARTMENT</th>
-                  <th>YEAR</th>
-                  <th className="text-center">ACTIONS</th>
-                </tr>
-              </thead>
-              <tbody>
-                {memoizedStudents.map((student, index) => (
-                  <tr key={student._id || index}>
-                    <td>
-                      <strong className="student-id">{student.studentId || ''}</strong>
-                    </td>
-                    <td>
-                      <span className="student-name" title={student.name}>{student.name || ''}</span>
-                    </td>
-                    <td>
-                      <span className="student-email" title={student.email}>{student.email || ''}</span>
-                    </td>
-                    <td>
-                      <span className="student-phone" title={student.phone}>{student.phone || ''}</span>
-                    </td>
-                    <td>
-                      <span className={`badge bg-${getDepartmentColor(student.department)}`}>
-                        {formatDepartment(student.department)}
-                      </span>
-                    </td>
-                    <td>
-                      <span className={`badge bg-${getYearVariant(student.year)}`}>
-                        {formatYear(student.year)}
-                      </span>
-                    </td>
-                    <td className="text-center">
-                      <div className="action-buttons">
-                        <Link 
-                          to={`/edit/${student._id}`} 
-                          className="btn btn-sm btn-outline-primary"
-                          title="Edit Student"
-                        >
-                          ✏️
-                        </Link>
-                        <button 
-                          className="btn btn-sm btn-outline-danger"
-                          onClick={() => handleDeleteClick(student)}
-                          title="Delete Student"
-                        >
-                          🗑️
-                        </button>
-                      </div>
-                    </td>
+            <div className="table-container">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>STUDENT ID</th>
+                    <th>NAME</th>
+                    <th>EMAIL</th>
+                    <th>PHONE</th>
+                    <th>DEPARTMENT</th>
+                    <th>YEAR</th>
+                    <th>ACTIONS</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {memoizedStudents.map((student, index) => (
+                    <tr key={student._id || index}>
+                      <td data-column="student-id">
+                        <strong>{student.studentId || ''}</strong>
+                      </td>
+                      <td data-column="name">
+                        {student.name || ''}
+                      </td>
+                      <td data-column="email">
+                        {student.email || ''}
+                      </td>
+                      <td data-column="phone">
+                        {student.phone || ''}
+                      </td>
+                      <td data-column="department">
+                        <span className={`badge bg-${getDepartmentColor(student.department)}`}>
+                          {formatDepartment(student.department)}
+                        </span>
+                      </td>
+                      <td data-column="year">
+                        <span className={`badge bg-${getYearVariant(student.year)}`}>
+                          {formatYear(student.year)}
+                        </span>
+                      </td>
+                      <td data-column="actions" className="actions-cell">
+                        <div className="action-buttons">
+                          <Link 
+                            to={`/edit/${student._id}`} 
+                            className="btn btn-sm btn-outline-primary action-btn"
+                            title="Edit Student"
+                          >
+                            ✏️
+                          </Link>
+                          <button 
+                            className="btn btn-sm btn-outline-danger action-btn"
+                            onClick={() => handleDeleteClick(student)}
+                            title="Delete Student"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       )}
@@ -443,68 +436,113 @@ const StudentList = ({ students, loading, onDelete, onSearch }) => {
           box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
-        .student-table {
-          background: white;
-          border-radius: 12px;
-          overflow: hidden;
-          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-          table-layout: fixed; /* Ensures column widths are respected */
-          width: 100%;
-          border-collapse: separate;
-          border-spacing: 0;
-          border: 2px solid #e9ecef;
-        }
+        /* Table Container */
+.table-container {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin-top: 1rem;
+}
 
-        .student-table thead th {
-          background: #f8f9fa;
-          font-weight: 600;
-          font-size: 0.85rem;
-          letter-spacing: 0.5px;
-          color: #6c757d;
-          padding: 1rem;
-          border-bottom: 2px solid #e9ecef;
-          white-space: nowrap;
-          text-align: left;
-          border-right: 1px solid #e9ecef;
-          position: relative;
-        }
+/* Data Table */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  font-size: 0.9rem;
+  border: 2px solid #e9ecef;
+  border-radius: 12px;
+  overflow: hidden;
+}
 
-        .student-table thead th:last-child {
-          border-right: none;
-        }
+.data-table thead {
+  background: #f8f9fa;
+}
 
-        .student-table tbody td {
-          padding: 1rem;
-          vertical-align: middle;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-          border-bottom: 1px solid #e9ecef;
-          border-right: 1px solid #e9ecef;
-          transition: background-color 0.2s ease;
-        }
+.data-table th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: #495057;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid #dee2e6;
+  white-space: nowrap;
+  border-right: 1px solid #dee2e6;
+}
 
-        .student-table tbody td:last-child {
-          border-right: none;
-        }
+.data-table th:last-child {
+  text-align: center;
+  min-width: 120px;
+  border-right: none;
+}
 
-        .student-table tbody tr:hover {
-          background: rgba(102, 126, 234, 0.05);
-        }
+.data-table tbody tr {
+  border-bottom: 1px solid #e9ecef;
+  transition: background-color 0.2s ease;
+}
 
-        .student-table tbody tr:hover td {
-          border-bottom-color: #667eea;
-          border-right-color: #667eea;
-        }
+.data-table tbody tr:hover {
+  background-color: #f8f9fa;
+}
 
-        .student-table tbody tr:last-child td {
-          border-bottom: none;
-        }
+.data-table tbody tr:last-child {
+  border-bottom: 2px solid #e9ecef;
+}
 
-        /* Ensure proper alignment for action buttons */
-        .student-table tbody td.text-center {
-          text-align: center !important;
-        }
+.data-table td {
+  padding: 1rem;
+  vertical-align: middle;
+  border-right: 1px solid #e9ecef;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.data-table td:last-child {
+  border-right: none;
+}
+
+.data-table td[data-column="actions"] {
+  text-align: center;
+  min-width: 120px;
+}
+
+/* Action Buttons */
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  align-items: center;
+}
+
+.action-btn {
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  min-width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Badges */
+.badge {
+  padding: 0.375rem 0.75rem;
+  font-weight: 600;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
 
         .student-id {
           color: #667eea;
