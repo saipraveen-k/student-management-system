@@ -46,21 +46,7 @@ BACKEND:
 └── studentRoutes.js - API routes
 ```
 
-### ✅ **Database Schema (Working)**
-```javascript
-Student Collection:
-{
-  _id: ObjectId,
-  studentId: String (unique, indexed),
-  name: String (required),
-  email: String (required, validated),
-  phone: String (required, 10 digits),
-  department: String (required),
-  year: String (required),
-  address: String (required),
-  createdAt/updatedAt: Date (auto)
-}
-```
+### ✅ **Database Schema**\n\n**Complete Source Code** - `backend/models/Student.js`\n\n```javascript\nconst mongoose = require('mongoose');\n\n// Student Schema Definition\nconst studentSchema = new mongoose.Schema({\n  studentId: {\n    type: String,\n    required: true,\n    unique: true,\n    trim: true\n  },\n  name: {\n    type: String,\n    required: true,\n    trim: true\n  },\n  email: {\n    type: String,\n    required: true,\n    trim: true,\n    lowercase: true\n  },\n  phone: {\n    type: String,\n    required: true,\n    trim: true\n  },\n  department: {\n    type: String,\n    required: true,\n    trim: true\n  },\n  year: {\n    type: String,\n    required: true,\n    trim: true\n  },\n  address: {\n    type: String,\n    required: true,\n    trim: true\n  }\n}, {\n  timestamps: true // Adds createdAt and updatedAt timestamps\n});\n\n// Ensure consistent field order in JSON output\nstudentSchema.set('toJSON', {\n  transform: function(doc, ret, options) {\n    // Return fields in the correct order to prevent shifting\n    return {\n      _id: ret._id,\n      studentId: ret.studentId,\n      name: ret.name,\n      email: ret.email,\n      phone: ret.phone,\n      department: ret.department,\n      year: ret.year,\n      address: ret.address,\n      createdAt: ret.createdAt,\n      updatedAt: ret.updatedAt\n    };\n  }\n});\n\n// Create and export the Student model\nconst Student = mongoose.model('Student', studentSchema);\n\nmodule.exports = Student;\n```
 
 ### ✅ **Working API Endpoints**
 | Method | Endpoint | Status | Purpose |
@@ -70,11 +56,7 @@ Student Collection:
 | GET | `/api/students/:id` | ✅ Working | Get single student |
 | PUT | `/api/students/:id` | ✅ Working | Update student |
 | DELETE | `/api/students/:id` | ✅ Working | Delete student |
-| GET | `/api/students/search/:q` | ✅ Working | Search students |
-
-### ✅ **Working Features List**
-```
-✓ Real-time search/filtering
+| GET | `/api/students/search/:q` | ✅ Working | Search students |\n\n## Backend API Routes\n\n**Complete Source Code** - `backend/routes/studentRoutes.js`\n\n```javascript\nconst express = require('express');\nconst router = express.Router();\nconst {\n  createStudent,\n  getAllStudents,\n  getStudentById,\n  updateStudent,\n  deleteStudent,\n  searchStudents\n} = require('../controllers/studentController');\n\n// Route to create a new student\nrouter.post('/', createStudent);\n\n// Route to get all students\nrouter.get('/', getAllStudents);\n\n// Route to search students\nrouter.get('/search/:query', searchStudents);\n\n// Route to get single student by ID\nrouter.get('/:id', getStudentById);\n\n// Route to update student\nrouter.put('/:id', updateStudent);\n\n// Route to delete student\nrouter.delete('/:id', deleteStudent);\n\nmodule.exports = router;\n```\n\n### ✅ **Working Features List**\n```\n✓ Real-time search/filtering
 ✓ Form validation (client/server)
 ✓ Loading states + error handling
 ✓ Success/error notifications
@@ -98,12 +80,7 @@ Student Collection:
 
 ## Implementation Details (What's Built)
 
-**Backend Structure:**
-```
-server.js → Routes → Controllers → MongoDB
-     ↓
-studentRoutes.js → studentController.js → Student model
-```
+## Backend (Node.js - Express Route)\n\n**Complete Source Code** - `backend/server.js`\n\n```javascript\nconst express = require('express');\nconst cors = require('cors');\nconst bodyParser = require('body-parser');\nconst dotenv = require('dotenv');\nconst connectDB = require('./config/db');\n\n// Load environment variables\ndotenv.config();\n\n// Initialize express app\nconst app = express();\n\n// Connect to database\nconnectDB();\n\n// Middleware\napp.use(cors());\napp.use(bodyParser.json());\napp.use(bodyParser.urlencoded({ extended: true }));\n\n// Routes\napp.use('/api/students', require('./routes/studentRoutes'));\n\n// Health check route\napp.get('/health', (req, res) => {\n  res.status(200).json({ message: 'Server is running' });\n});\n\n// Error handling middleware\napp.use((err, req, res, next) => {\n  console.error(err.stack);\n  res.status(500).json({ message: 'Something went wrong!' });\n});\n\n// Handle 404\napp.use('*', (req, res) => {\n  res.status(404).json({ message: 'Route not found' });\n});\n\n// Start server\nconst PORT = process.env.PORT || 5000;\napp.listen(PORT, () => {\n  console.log(`Server is running on port ${PORT}`);\n});\n```\n\n**Backend Structure:**\n```\nserver.js → Routes → Controllers → MongoDB\n     ↓\nstudentRoutes.js → studentController.js → Student model\n```
 
 **Frontend Flow:**
 ```
